@@ -19,7 +19,7 @@ func Test_main(t *testing.T) {
 		}
 	}()
 	output="f:\\优质资源"
-	url="https://m3u8.hhw95.com/91tv/91tv/aRE5ACytYaftP6pvRqNaUCFY95TYlU/hls/1/index.m3u8"
+	url="https://video.dious.cc/20200612/tVmwUYdV/index.m3u8"
 	videoName="是小甜心吗"
 	chanSize=25
 	downloader, err := dl.NewTask(output, url,videoName)
