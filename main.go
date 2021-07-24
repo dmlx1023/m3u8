@@ -16,14 +16,19 @@ var (
 )
 
 func init() {
-	flag.StringVar(&url, "u", "", "M3U8 URL, required")
-	flag.IntVar(&chanSize, "c", 25, "Maximum number of occurrences")
+	flag.StringVar(&url, "u", "", "M3U8 URL, required.")
+	flag.IntVar(&chanSize, "c", 25, "Maximum number of occurrences,default value is enough,don't change it if you are not understand this!")
 	flag.StringVar(&output, "o", "f://videos", "Output folder, required")
-	flag.StringVar(&videoName, "n", "视频", "File Name")
+	flag.StringVar(&videoName, "n", "m3u8_video", "File Name")
 }
 
 func main() {
+	if len(flag.Args())==0 {
+		fmt.Println("please use [-help] for more details!")
+		return
+	}
 	flag.Parse()
+
 	defer func() {
 		if r := recover(); r != nil {
 			fmt.Println("[error]", r)
