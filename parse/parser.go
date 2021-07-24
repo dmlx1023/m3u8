@@ -6,7 +6,7 @@ import (
 	"io/ioutil"
 	"net/url"
 
-	"github.com/oopsguy/m3u8/tool"
+	"m3u8/tool"
 )
 
 type Result struct {
@@ -26,7 +26,6 @@ func FromURL(link string) (*Result, error) {
 		return nil, fmt.Errorf("request m3u8 URL failed: %s", err.Error())
 	}
 	//noinspection GoUnhandledErrorResult
-	defer body.Close()
 	m3u8, err := parse(body)
 	if err != nil {
 		return nil, err
@@ -57,11 +56,10 @@ func FromURL(link string) (*Result, error) {
 				return nil, fmt.Errorf("extract key failed: %s", err.Error())
 			}
 			keyByte, err := ioutil.ReadAll(resp)
-			_ = resp.Close()
 			if err != nil {
 				return nil, err
 			}
-			fmt.Println("decryption key: ", string(keyByte))
+			//fmt.Println("decryption key: ", string(keyByte))
 			result.Keys[idx] = string(keyByte)
 		default:
 			return nil, fmt.Errorf("unknown or unsupported cryption method: %s", key.Method)

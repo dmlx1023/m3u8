@@ -1,22 +1,20 @@
 package tool
 
 import (
+	"bytes"
 	"fmt"
+	"github.com/valyala/fasthttp"
 	"io"
-	"net/http"
-	"time"
 )
 
-func Get(url string) (io.ReadCloser, error) {
-	c := http.Client{
-		Timeout: time.Duration(60) * time.Second,
-	}
-	resp, err := c.Get(url)
+func Get(url string) ( io.Reader, error ) {
+
+	state, resp, err := fasthttp.Get(nil, url)
 	if err != nil {
 		return nil, err
 	}
-	if resp.StatusCode != 200 {
-		return nil, fmt.Errorf("http error: status code %d", resp.StatusCode)
+	if state != fasthttp.StatusOK{
+		return nil, fmt.Errorf("http error: status code %d", state )
 	}
-	return resp.Body, nil
+	return  bytes.NewReader(resp), nil
 }

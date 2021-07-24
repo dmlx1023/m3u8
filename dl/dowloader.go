@@ -3,25 +3,26 @@ package dl
 import (
 	"bufio"
 	"fmt"
+	"github.com/schollz/progressbar/v3"
 	"io/ioutil"
+	"m3u8/parse"
+	"m3u8/tool"
 	"os"
 	"path/filepath"
 	"strconv"
 	"sync"
 	"sync/atomic"
-
-	"github.com/oopsguy/m3u8/parse"
-	"github.com/oopsguy/m3u8/tool"
 )
 
 const (
 	tsExt            = ".ts"
 	tsFolderName     = "ts"
-	mergeTSFilename  = "main.ts"
+
 	tsTempFileSuffix = "_tmp"
 	progressWidth    = 40
 )
-
+var mergeTSFilename string
+var bar= progressbar.Default(100)
 type Downloader struct {
 	lock     sync.Mutex
 	queue    []int
@@ -34,7 +35,8 @@ type Downloader struct {
 }
 
 // NewTask returns a Task instance
-func NewTask(output string, url string) (*Downloader, error) {
+func NewTask(output , url,videoName string) (*Downloader, error) {
+	mergeTSFilename=videoName+".mp4"
 	result, err := parse.FromURL(url)
 	if err != nil {
 		return nil, err
@@ -70,6 +72,7 @@ func NewTask(output string, url string) (*Downloader, error) {
 // Start runs downloader
 func (d *Downloader) Start(concurrency int) error {
 	var wg sync.WaitGroup
+	bar = progressbar.Default(int64(d.segLen)+1)
 	// struct{} zero size
 	limitChan := make(chan struct{}, concurrency)
 	for {
@@ -83,6 +86,7 @@ func (d *Downloader) Start(concurrency int) error {
 		wg.Add(1)
 		go func(idx int) {
 			defer wg.Done()
+			defer bar.Add(1)
 			if err := d.download(idx); err != nil {
 				// Back into the queue, retry request
 				fmt.Printf("[failed] %s\n", err.Error())
@@ -109,7 +113,6 @@ func (d *Downloader) download(segIndex int) error {
 		return fmt.Errorf("request %s, %s", tsUrl, e.Error())
 	}
 	//noinspection GoUnhandledErrorResult
-	defer b.Close()
 	fPath := filepath.Join(d.tsFolder, tsFilename)
 	fTemp := fPath + tsTempFileSuffix
 	f, err := os.Create(fTemp)
@@ -155,7 +158,7 @@ func (d *Downloader) download(segIndex int) error {
 	// Maybe it will be safer in this way...
 	atomic.AddInt32(&d.finish, 1)
 	//tool.DrawProgressBar("Downloading", float32(d.finish)/float32(d.segLen), progressWidth)
-	fmt.Printf("[download %6.2f%%] %s\n", float32(d.finish)/float32(d.segLen)*100, tsUrl)
+	//fmt.Printf("[download %6.2f%%] %s\n", float32(d.finish)/float32(d.segLen)*100, tsUrl)
 	return nil
 }
 
@@ -188,6 +191,7 @@ func (d *Downloader) back(segIndex int) error {
 }
 
 func (d *Downloader) merge() error {
+
 	// In fact, the number of downloaded segments should be equal to number of m3u8 segments
 	missingCount := 0
 	for idx := 0; idx < d.segLen; idx++ {
@@ -220,8 +224,7 @@ func (d *Downloader) merge() error {
 			continue
 		}
 		mergedCount++
-		tool.DrawProgressBar("merge",
-			float32(mergedCount)/float32(d.segLen), progressWidth)
+
 	}
 	_ = writer.Flush()
 	// Remove `ts` folder
@@ -230,9 +233,8 @@ func (d *Downloader) merge() error {
 	if mergedCount != d.segLen {
 		fmt.Printf("[warning] \n%d files merge failed", d.segLen-mergedCount)
 	}
-
+	bar.Add(1)
 	fmt.Printf("\n[output] %s\n", mFilePath)
-
 	return nil
 }
 

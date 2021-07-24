@@ -3,21 +3,23 @@ package main
 import (
 	"flag"
 	"fmt"
+	"m3u8/dl"
 	"os"
-
-	"github.com/oopsguy/m3u8/dl"
 )
 
 var (
 	url      string
 	output   string
+	videoName string
 	chanSize int
+
 )
 
 func init() {
 	flag.StringVar(&url, "u", "", "M3U8 URL, required")
 	flag.IntVar(&chanSize, "c", 25, "Maximum number of occurrences")
-	flag.StringVar(&output, "o", "", "Output folder, required")
+	flag.StringVar(&output, "o", "f://videos", "Output folder, required")
+	flag.StringVar(&videoName, "n", "视频", "File Name")
 }
 
 func main() {
@@ -37,14 +39,13 @@ func main() {
 	if chanSize <= 0 {
 		panic("parameter 'c' must be greater than 0")
 	}
-	downloader, err := dl.NewTask(output, url)
+	downloader, err := dl.NewTask(output, url,videoName)
 	if err != nil {
 		panic(err)
 	}
 	if err := downloader.Start(chanSize); err != nil {
 		panic(err)
 	}
-	fmt.Println("Done!")
 }
 
 func panicParameter(name string) {
